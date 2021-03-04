@@ -15,12 +15,12 @@ fn main() {
         .with_label("Counter");
     wind.set_color(Color::from_u32(0x2d1301));
     wind.fullscreen(true);
-    let mut frame = Frame::default()
+    let mut clock_display = Frame::default()
         .with_size(width as i32, height as i32)
         .center_of(&wind)
         .with_label("11:11:11");
-    frame.set_label_size((height * 0.4) as i32);
-    frame.set_label_color(Color::Red);
+    clock_display.set_label_size((height * 0.4) as i32);
+    clock_display.set_label_color(Color::Red);
 
     wind.end();
     wind.show();
@@ -35,8 +35,8 @@ fn main() {
 
     while app.wait() {
         if let Some(s) = rx.recv() {
-            frame.set_label(&s);
-            frame.redraw();
+            clock_display.set_label(&s);
+            clock_display.redraw();
         }
     }
 }
