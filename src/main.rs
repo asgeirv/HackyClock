@@ -19,7 +19,7 @@ fn main() {
         .with_size(width as i32, height as i32)
         .center_of(&wind)
         .with_label("11:11:11");
-    frame.set_label_size(200);
+    frame.set_label_size((height * 0.4) as i32);
     frame.set_label_color(Color::Red);
 
     wind.end();
