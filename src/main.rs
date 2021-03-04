@@ -15,12 +15,18 @@ fn main() {
         .with_label("Counter");
     wind.set_color(Color::from_u32(0x2d1301));
     wind.fullscreen(true);
+
     let mut clock_display = Frame::default()
-        .with_size(width as i32, height as i32)
+        .with_size(width as i32, (height * 0.4) as i32)
         .center_of(&wind)
         .with_label("11:11:11");
     clock_display.set_label_size((height * 0.4) as i32);
     clock_display.set_label_color(Color::Red);
+
+    let mut date_display = Frame::default()
+        .with_size(width as i32, (height * 0.1) as i32)
+        .right_of(&clock_display, 10)
+        .with_label("01.01.1970");
 
     wind.end();
     wind.show();
