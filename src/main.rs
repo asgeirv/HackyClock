@@ -67,5 +67,5 @@ fn calculate_seconds_x(width: f64) -> i32 {
 }
 
 fn calculate_seconds_y(y: i32, height: i32) -> i32 {
-    y + (height as f64 / 1.7) as i32
+    y + (height as f64 / 1.8) as i32
 }
