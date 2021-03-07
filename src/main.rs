@@ -5,8 +5,8 @@ use std::{thread, time::Duration};
 use chrono::{DateTime, Datelike, Local, Timelike};
 use fltk::{
     app,
-    button::{Button, ButtonExt},
-    enums::Color,
+    button::Button,
+    enums::{Color, Font},
     frame::Frame,
     window::Window,
     FrameType, GroupExt, WidgetExt, WindowExt,
@@ -33,6 +33,7 @@ fn main() -> anyhow::Result<()> {
     let height = height * 0.96;
 
     let app = app::App::default();
+    app::set_font(Font::Courier);
     let mut wind = Window::default()
         .with_size(width as i32, height as i32)
         .center_screen()
@@ -83,11 +84,17 @@ fn main() -> anyhow::Result<()> {
     let mut previous_time = Local::now();
     // Binding exists to keep audio stream alive, so that alarm keeps playing.
     let mut _playing_alarm = None;
+    let mut show_colon = true;
     while app.wait() {
         if let Some(msg) = rx.recv() {
             match msg {
                 Msg::ReceiveTime(current_time) => {
-                    clock_display.set_label(&format!("{}", current_time.format("%H:%M")));
+                    let clock_format = if show_colon {
+                        current_time.format("%H:%M")
+                    } else {
+                        current_time.format("%H %M")
+                    };
+                    clock_display.set_label(&format!("{}", clock_format));
                     seconds_display.set_label(&format!("{}", current_time.format("%S")));
                     date_display.set_label(&format!("{}", current_time.format("%-d.%-m.%Y")));
 
@@ -98,6 +105,7 @@ fn main() -> anyhow::Result<()> {
                         }
                     }
 
+                    show_colon = !show_colon;
                     previous_time = current_time;
                 }
                 Msg::OnClick => {
