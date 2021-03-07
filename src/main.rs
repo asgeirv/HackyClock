@@ -58,8 +58,6 @@ fn main() {
             date_display.set_label(&format!("{}", time.format("%-d.%-m.%Y")));
         }
     }
-
-    std::process::exit(0);
 }
 
 fn calculate_seconds_x(x: i32, width: i32) -> i32 {
