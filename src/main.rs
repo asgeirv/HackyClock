@@ -13,7 +13,7 @@ use fltk::{
 };
 use rodio::Source;
 
-use crate::config::{Alarm, Config};
+use crate::config::Alarm;
 
 mod config;
 
@@ -24,7 +24,8 @@ enum Msg {
 }
 
 fn main() -> anyhow::Result<()> {
-    let Config { alarms, audio_path } = config::read()?;
+    let mut config = config::read()?;
+    let config_watcher = config::watch()?;
 
     let (tx, rx) = app::channel();
 
@@ -34,16 +35,16 @@ fn main() -> anyhow::Result<()> {
 
     let app = app::App::default();
     app::set_font(Font::Courier);
-    let mut wind = Window::default()
+    let mut window = Window::default()
         .with_size(width as i32, height as i32)
         .center_screen()
         .with_label("Counter");
-    wind.set_color(Color::from_u32(0x2d1301));
-    wind.fullscreen(true);
+    window.set_color(Color::from_u32(0x2d1301));
+    window.fullscreen(true);
 
     let mut stop_button = Button::default()
         .with_size(width as i32, height as i32)
-        .center_of(&wind);
+        .center_of(&window);
     stop_button.set_color(Color::from_u32(0x2d1301));
     stop_button.clear_visible_focus();
     stop_button.set_frame(FrameType::FlatBox);
@@ -51,7 +52,7 @@ fn main() -> anyhow::Result<()> {
 
     let mut clock_display = Frame::default()
         .with_size(width as i32, (height * 0.35) as i32)
-        .center_of(&wind)
+        .center_of(&window)
         .with_label("11:11");
     clock_display.set_label_size((height * 0.35) as i32);
     clock_display.set_label_color(Color::Red);
@@ -73,8 +74,8 @@ fn main() -> anyhow::Result<()> {
     date_display.set_label_color(Color::Red);
     date_display.set_label_size((height * 0.07) as i32);
 
-    wind.end();
-    wind.show();
+    window.end();
+    window.show();
 
     thread::spawn(move || loop {
         tx.send(Msg::ReceiveTime(Local::now()));
@@ -86,6 +87,16 @@ fn main() -> anyhow::Result<()> {
     let mut _playing_alarm = None;
     let mut show_colon = true;
     while app.wait() {
+        if let Some(config_result) = config_watcher.poll() {
+            match config_result {
+                Ok(new_config) => {
+                    config = new_config;
+                    println!("Config reloaded");
+                },
+                Err(error) => eprintln!("Error reloading config: {}", error)
+            }
+        }
+
         if let Some(msg) = rx.recv() {
             match msg {
                 Msg::ReceiveTime(current_time) => {
@@ -99,9 +110,9 @@ fn main() -> anyhow::Result<()> {
                     date_display.set_label(&format!("{}", current_time.format("%-d.%-m.%Y")));
 
                     if previous_time.minute() != current_time.minute() {
-                        if check_alarm(&current_time, &alarms) {
+                        if check_alarm(&current_time, &config.alarms) {
                             println!("Playing alarm");
-                            _playing_alarm = Some(play_alarm(&audio_path));
+                            _playing_alarm = Some(play_alarm(&config.audio_path));
                         }
                     }
 
