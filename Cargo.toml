@@ -9,3 +9,6 @@ edition = "2018"
 [dependencies]
 chrono = "0.4.19"
 fltk = "0.15.6"
+
+[target.armv7-unknown-linux-gnueabihf]
+linker = "arm-linux-gnueabihf-gcc"
