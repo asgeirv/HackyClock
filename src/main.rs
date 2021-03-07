@@ -63,7 +63,7 @@ fn main() {
 }
 
 fn calculate_seconds_x(width: f64) -> i32 {
-    (width * 0.8) as i32
+    (width * 0.82) as i32
 }
 
 fn calculate_seconds_y(y: i32, height: i32) -> i32 {
