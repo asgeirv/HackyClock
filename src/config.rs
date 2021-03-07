@@ -9,8 +9,8 @@ pub struct Config {
 
 #[derive(Deserialize, Debug)]
 pub struct AlarmTime {
-    hour: u8,
-    minute: u8,
+    pub hour: u8,
+    pub minute: u8,
 }
 
 pub fn read() -> anyhow::Result<Config> {

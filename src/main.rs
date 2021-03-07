@@ -1,16 +1,14 @@
 use std::{thread, time::Duration};
 
-use chrono::Local;
+use chrono::{Local, DateTime, Timelike};
 use fltk::{app, enums::Color, frame::Frame, window::Window, GroupExt, WidgetExt, WindowExt};
 
-use crate::config::Config;
+use crate::config::{Config, AlarmTime};
 
 mod config;
 
 fn main() -> anyhow::Result<()> {
     let Config { alarm_time } = config::read()?;
-
-    dbg!(alarm_time);
 
     let (width, height) = app::screen_size();
     let width = width * 0.96;
@@ -59,11 +57,21 @@ fn main() -> anyhow::Result<()> {
         thread::sleep(Duration::from_secs(1));
     });
 
+    let mut previous_time = Local::now();
     while app.wait() {
-        if let Some(time) = rx.recv() {
-            clock_display.set_label(&format!("{}", time.format("%H:%M")));
-            seconds_display.set_label(&format!("{}", time.format("%S")));
-            date_display.set_label(&format!("{}", time.format("%-d.%-m.%Y")));
+        if let Some(current_time) = rx.recv() {
+            clock_display.set_label(&format!("{}", current_time.format("%H:%M")));
+            seconds_display.set_label(&format!("{}", current_time.format("%S")));
+            date_display.set_label(&format!("{}", current_time.format("%-d.%-m.%Y")));
+
+            if previous_time.minute() != current_time.minute() {
+                if check_alarm(&current_time, &alarm_time) {
+                    // TODO Sound the alarm
+                    println!("Wakey");
+                }
+            }
+
+            previous_time = current_time;
         }
     }
 
@@ -76,4 +84,11 @@ fn calculate_seconds_x(x: i32, width: i32) -> i32 {
 
 fn calculate_seconds_y(y: i32, height: i32) -> i32 {
     y + (height as f64 / 1.7) as i32
+}
+
+fn check_alarm(current_time: &DateTime<Local>, alarm_time: &AlarmTime) -> bool {
+    let current_hour = current_time.hour();
+    let current_minute = current_time.minute();
+
+    current_hour == alarm_time.hour as u32 && current_minute == alarm_time.minute as u32
 }
