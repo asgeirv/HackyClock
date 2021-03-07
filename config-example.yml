@@ -1,3 +1,8 @@
+# Time of day when alarm should be played
 alarm_time:
   hour: 7
   minute: 0
+
+# Path to the alarm audio
+# Currently only supports single file. Will support directory soon TM.
+audio_path: '~/hacky-clock-alarm/'

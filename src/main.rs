@@ -1,14 +1,20 @@
+use std::fs::File;
+use std::io::BufReader;
 use std::{thread, time::Duration};
 
-use chrono::{Local, DateTime, Timelike};
+use chrono::{DateTime, Local, Timelike};
 use fltk::{app, enums::Color, frame::Frame, window::Window, GroupExt, WidgetExt, WindowExt};
+use rodio::Source;
 
-use crate::config::{Config, AlarmTime};
+use crate::config::{AlarmTime, Config};
 
 mod config;
 
 fn main() -> anyhow::Result<()> {
-    let Config { alarm_time } = config::read()?;
+    let Config {
+        alarm_time,
+        audio_path,
+    } = config::read()?;
 
     let (width, height) = app::screen_size();
     let width = width * 0.96;
@@ -58,6 +64,7 @@ fn main() -> anyhow::Result<()> {
     });
 
     let mut previous_time = Local::now();
+    let mut playing_alarm = None;
     while app.wait() {
         if let Some(current_time) = rx.recv() {
             clock_display.set_label(&format!("{}", current_time.format("%H:%M")));
@@ -66,8 +73,8 @@ fn main() -> anyhow::Result<()> {
 
             if previous_time.minute() != current_time.minute() {
                 if check_alarm(&current_time, &alarm_time) {
-                    // TODO Sound the alarm
-                    println!("Wakey");
+                    println!("Playing alarm");
+                    playing_alarm = Some(play_alarm(&audio_path));
                 }
             }
 
@@ -91,4 +98,15 @@ fn check_alarm(current_time: &DateTime<Local>, alarm_time: &AlarmTime) -> bool {
     let current_minute = current_time.minute();
 
     current_hour == alarm_time.hour as u32 && current_minute == alarm_time.minute as u32
+}
+
+fn play_alarm(alarm_path: &str) -> (rodio::OutputStream, rodio::OutputStreamHandle) {
+    let (stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
+
+    // TODO load all files in directory
+    let file = File::open(alarm_path).unwrap();
+    let source = rodio::Decoder::new(BufReader::new(file)).unwrap();
+    stream_handle.play_raw(source.convert_samples());
+
+    (stream, stream_handle)
 }

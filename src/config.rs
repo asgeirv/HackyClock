@@ -5,6 +5,7 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 pub struct Config {
     pub alarm_time: AlarmTime,
+    pub audio_path: String,
 }
 
 #[derive(Deserialize, Debug)]
