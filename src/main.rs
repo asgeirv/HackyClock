@@ -25,7 +25,7 @@ fn main() {
     let (clock_width, clock_height) = clock_display.measure_label();
     println!("{}, {}, {}", clock_display.y(), clock_width, clock_height);
 
-    let secs_x = calculate_seconds_x(clock_display.x(), clock_width);
+    let secs_x = calculate_seconds_x(width);
     let secs_y = calculate_seconds_y(clock_display.y(), clock_height);
     let mut seconds_display = Frame::default()
         .with_size((width * 0.07) as i32, (height * 0.07) as i32)
@@ -62,8 +62,8 @@ fn main() {
     std::process::exit(0);
 }
 
-fn calculate_seconds_x(x: i32, width: i32) -> i32 {
-    (x as f64 + width as f64 * 1.65) as i32
+fn calculate_seconds_x(width: f64) -> i32 {
+    (width * 0.75) as i32
 }
 
 fn calculate_seconds_y(y: i32, height: i32) -> i32 {
