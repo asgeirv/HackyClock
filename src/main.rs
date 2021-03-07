@@ -1,9 +1,21 @@
+use std::fs::File;
+use std::io::BufReader;
 use std::{thread, time::Duration};
 
-use chrono::{Local, Timelike};
+use chrono::{DateTime, Local, Timelike};
 use fltk::{app, enums::Color, frame::Frame, window::Window, GroupExt, WidgetExt, WindowExt};
+use rodio::Source;
 
-fn main() {
+use crate::config::{AlarmTime, Config};
+
+mod config;
+
+fn main() -> anyhow::Result<()> {
+    let Config {
+        alarm_time,
+        audio_path,
+    } = config::read()?;
+
     let (width, height) = app::screen_size();
     let width = width * 0.96;
     let height = height * 0.96;
@@ -50,15 +62,26 @@ fn main() {
         thread::sleep(Duration::from_secs(1));
     });
 
+    let mut previous_time = Local::now();
+    let mut playing_alarm = None;
     while app.wait() {
-        if let Some(time) = rx.recv() {
-            clock_display.set_label(&format!("{}", time.format("%H:%M")));
-            seconds_display.set_label(&format!("{}", time.format("%S")));
-            date_display.set_label(&format!("{}", time.format("%-d.%-m.%Y")));
+        if let Some(current_time) = rx.recv() {
+            clock_display.set_label(&format!("{}", current_time.format("%H:%M")));
+            seconds_display.set_label(&format!("{}", current_time.format("%S")));
+            date_display.set_label(&format!("{}", current_time.format("%-d.%-m.%Y")));
+
+            if previous_time.minute() != current_time.minute() {
+                if check_alarm(&current_time, &alarm_time) {
+                    println!("Playing alarm");
+                    playing_alarm = Some(play_alarm(&audio_path));
+                }
+            }
+
+            previous_time = current_time;
         }
     }
 
-    std::process::exit(0);
+    Ok(())
 }
 
 fn calculate_seconds_x(width: f64) -> i32 {
@@ -67,4 +90,22 @@ fn calculate_seconds_x(width: f64) -> i32 {
 
 fn calculate_seconds_y(y: i32, height: i32) -> i32 {
     y + (height as f64 / 1.8) as i32
+}
+
+fn check_alarm(current_time: &DateTime<Local>, alarm_time: &AlarmTime) -> bool {
+    let current_hour = current_time.hour();
+    let current_minute = current_time.minute();
+
+    current_hour == alarm_time.hour as u32 && current_minute == alarm_time.minute as u32
+}
+
+fn play_alarm(alarm_path: &str) -> (rodio::OutputStream, rodio::OutputStreamHandle) {
+    let (stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
+
+    // TODO load all files in directory
+    let file = File::open(alarm_path).unwrap();
+    let source = rodio::Decoder::new(BufReader::new(file)).unwrap();
+    stream_handle.play_raw(source.convert_samples());
+
+    (stream, stream_handle)
 }
