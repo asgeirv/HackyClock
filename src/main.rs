@@ -1,6 +1,6 @@
 use std::{thread, time::Duration};
 
-use chrono::Local;
+use chrono::{Local, Timelike};
 use fltk::{app, enums::Color, frame::Frame, window::Window, GroupExt, WidgetExt, WindowExt};
 
 fn main() {
@@ -42,7 +42,8 @@ fn main() {
     while app.wait() {
         if let Some(s) = rx.recv() {
             clock_display.set_label(&s);
-            clock_display.redraw();
         }
     }
+
+    std::process::exit(0);
 }
