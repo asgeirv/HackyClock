@@ -24,9 +24,11 @@ fn main() {
     clock_display.set_label_color(Color::Red);
 
     let mut date_display = Frame::default()
-        .with_size(width as i32, (height * 0.1) as i32)
-        .right_of(&clock_display, 10)
+        .with_size(width as i32, (height * 0.07) as i32)
+        .below_of(&clock_display, (height * 0.2) as i32)
         .with_label("01.01.1970");
+    date_display.set_label_color(Color::Red);
+    date_display.set_label_size((height * 0.07) as i32);
 
     wind.end();
     wind.show();
@@ -34,14 +36,14 @@ fn main() {
     let (tx, rx) = app::channel();
 
     thread::spawn(move || loop {
-        let time = Local::now();
-        tx.send(format!("{}", time.format("%H:%M:%S")));
+        tx.send(Local::now());
         thread::sleep(Duration::from_secs(1));
     });
 
     while app.wait() {
-        if let Some(s) = rx.recv() {
-            clock_display.set_label(&s);
+        if let Some(time) = rx.recv() {
+            clock_display.set_label(&format!("{}", time.format("%H:%M:%S")));
+            date_display.set_label(&format!("{}", time.format("%-d.%-m.%Y")));
         }
     }
 
