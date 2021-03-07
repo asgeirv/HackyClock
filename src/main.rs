@@ -19,9 +19,20 @@ fn main() {
     let mut clock_display = Frame::default()
         .with_size(width as i32, (height * 0.35) as i32)
         .center_of(&wind)
-        .with_label("11:11:11");
+        .with_label("11:11");
     clock_display.set_label_size((height * 0.35) as i32);
     clock_display.set_label_color(Color::Red);
+    let (clock_width, clock_height) = clock_display.measure_label();
+    println!("{}, {}, {}", clock_display.y(), clock_width, clock_height);
+
+    let secs_x = calculate_seconds_x(clock_display.x(), clock_width);
+    let secs_y = calculate_seconds_y(clock_display.y(), clock_height);
+    let mut seconds_display = Frame::default()
+        .with_size((width * 0.07) as i32, (height * 0.07) as i32)
+        .with_pos(secs_x, secs_y)
+        .with_label("11");
+    seconds_display.set_label_size((height * 0.07) as i32);
+    seconds_display.set_label_color(Color::Red);
 
     let mut date_display = Frame::default()
         .with_size(width as i32, (height * 0.07) as i32)
@@ -42,10 +53,19 @@ fn main() {
 
     while app.wait() {
         if let Some(time) = rx.recv() {
-            clock_display.set_label(&format!("{}", time.format("%H:%M:%S")));
+            clock_display.set_label(&format!("{}", time.format("%H:%M")));
+            seconds_display.set_label(&format!("{}", time.format("%S")));
             date_display.set_label(&format!("{}", time.format("%-d.%-m.%Y")));
         }
     }
 
     std::process::exit(0);
+}
+
+fn calculate_seconds_x(x: i32, width: i32) -> i32 {
+    (x as f64 + width as f64 * 1.65) as i32
+}
+
+fn calculate_seconds_y(y: i32, height: i32) -> i32 {
+    y + (height as f64 / 1.7) as i32
 }
