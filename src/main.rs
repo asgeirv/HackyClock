@@ -31,7 +31,7 @@ fn main() {
         .with_size((width * 0.07) as i32, (height * 0.07) as i32)
         .with_pos(secs_x, secs_y)
         .with_label("11");
-    seconds_display.set_label_size((height * 0.1) as i32);
+    seconds_display.set_label_size((height * 0.12) as i32);
     seconds_display.set_label_color(Color::Red);
 
     let mut date_display = Frame::default()
@@ -63,9 +63,9 @@ fn main() {
 }
 
 fn calculate_seconds_x(width: f64) -> i32 {
-    (width * 0.78) as i32
+    (width * 0.84) as i32
 }
 
 fn calculate_seconds_y(y: i32, height: i32) -> i32 {
-    y + (height as f64 / 1.7) as i32
+    y + (height as f64 / 1.8) as i32
 }
