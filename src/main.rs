@@ -22,9 +22,8 @@ fn main() {
         .with_label("11:11");
     clock_display.set_label_size((height * 0.35) as i32);
     clock_display.set_label_color(Color::Red);
-    let (clock_width, clock_height) = clock_display.measure_label();
-    println!("{}, {}, {}", clock_display.y(), clock_width, clock_height);
 
+    let (_clock_width, clock_height) = clock_display.measure_label();
     let secs_x = calculate_seconds_x(width);
     let secs_y = calculate_seconds_y(clock_display.y(), clock_height);
     let mut seconds_display = Frame::default()
