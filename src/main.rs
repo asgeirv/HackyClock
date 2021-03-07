@@ -3,15 +3,30 @@ use std::io::BufReader;
 use std::{thread, time::Duration};
 
 use chrono::{DateTime, Datelike, Local, Timelike};
-use fltk::{app, enums::Color, frame::Frame, window::Window, GroupExt, WidgetExt, WindowExt};
+use fltk::{
+    app,
+    button::{Button, ButtonExt},
+    enums::Color,
+    frame::Frame,
+    window::Window,
+    FrameType, GroupExt, WidgetExt, WindowExt,
+};
 use rodio::Source;
 
 use crate::config::{Alarm, Config};
 
 mod config;
 
+#[derive(Clone)]
+enum Msg {
+    ReceiveTime(DateTime<Local>),
+    OnClick,
+}
+
 fn main() -> anyhow::Result<()> {
     let Config { alarms, audio_path } = config::read()?;
+
+    let (tx, rx) = app::channel();
 
     let (width, height) = app::screen_size();
     let width = width * 0.96;
@@ -24,6 +39,14 @@ fn main() -> anyhow::Result<()> {
         .with_label("Counter");
     wind.set_color(Color::from_u32(0x2d1301));
     wind.fullscreen(true);
+
+    let mut stop_button = Button::default()
+        .with_size(width as i32, height as i32)
+        .center_of(&wind);
+    stop_button.set_color(Color::from_u32(0x2d1301));
+    stop_button.clear_visible_focus();
+    stop_button.set_frame(FrameType::FlatBox);
+    stop_button.emit(tx.clone(), Msg::OnClick);
 
     let mut clock_display = Frame::default()
         .with_size(width as i32, (height * 0.35) as i32)
@@ -52,29 +75,36 @@ fn main() -> anyhow::Result<()> {
     wind.end();
     wind.show();
 
-    let (tx, rx) = app::channel();
-
     thread::spawn(move || loop {
-        tx.send(Local::now());
+        tx.send(Msg::ReceiveTime(Local::now()));
         thread::sleep(Duration::from_secs(1));
     });
 
     let mut previous_time = Local::now();
+    // Binding exists to keep audio stream alive, so that alarm keeps playing.
     let mut _playing_alarm = None;
     while app.wait() {
-        if let Some(current_time) = rx.recv() {
-            clock_display.set_label(&format!("{}", current_time.format("%H:%M")));
-            seconds_display.set_label(&format!("{}", current_time.format("%S")));
-            date_display.set_label(&format!("{}", current_time.format("%-d.%-m.%Y")));
+        if let Some(msg) = rx.recv() {
+            match msg {
+                Msg::ReceiveTime(current_time) => {
+                    clock_display.set_label(&format!("{}", current_time.format("%H:%M")));
+                    seconds_display.set_label(&format!("{}", current_time.format("%S")));
+                    date_display.set_label(&format!("{}", current_time.format("%-d.%-m.%Y")));
 
-            if previous_time.minute() != current_time.minute() {
-                if check_alarm(&current_time, &alarms) {
-                    println!("Playing alarm");
-                    _playing_alarm = Some(play_alarm(&audio_path));
+                    if previous_time.minute() != current_time.minute() {
+                        if check_alarm(&current_time, &alarms) {
+                            println!("Playing alarm");
+                            _playing_alarm = Some(play_alarm(&audio_path));
+                        }
+                    }
+
+                    previous_time = current_time;
+                }
+                Msg::OnClick => {
+                    println!("Stopping alarm");
+                    _playing_alarm = None;
                 }
             }
-
-            previous_time = current_time;
         }
     }
 
