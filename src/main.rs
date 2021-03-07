@@ -1,9 +1,17 @@
 use std::{thread, time::Duration};
 
-use chrono::{Local, Timelike};
+use chrono::Local;
 use fltk::{app, enums::Color, frame::Frame, window::Window, GroupExt, WidgetExt, WindowExt};
 
-fn main() {
+use crate::config::Config;
+
+mod config;
+
+fn main() -> anyhow::Result<()> {
+    let Config { alarm_time } = config::read()?;
+
+    dbg!(alarm_time);
+
     let (width, height) = app::screen_size();
     let width = width * 0.96;
     let height = height * 0.96;
@@ -58,6 +66,8 @@ fn main() {
             date_display.set_label(&format!("{}", time.format("%-d.%-m.%Y")));
         }
     }
+
+    Ok(())
 }
 
 fn calculate_seconds_x(x: i32, width: i32) -> i32 {
